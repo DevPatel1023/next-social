@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/app/lib/supabase/server";
-import Post from "@/app/components/Post";
+import FeedList from "@/app/components/FeedList";
 import { loadPostsWithComments, resolveImageSource } from "@/app/lib/social";
 
 function initialsFromUsername(value: string) {
@@ -56,22 +56,12 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {posts.map((post) => (
-          <Post
-            key={post.id}
-            id={post.id}
-            author={post.author}
-            caption={post.caption}
-            images={post.images}
-            initialComments={post.comments}
-          />
-        ))}
-
-        {posts.length === 0 ? (
-          <div className="rounded-sm border border-gray-200 bg-white p-6 text-center text-sm text-gray-500 shadow-sm">
-            You have not posted anything yet.
-          </div>
-        ) : null}
+        <FeedList
+          posts={posts}
+          emptyMessage="You have not posted anything yet."
+          paginated={false}
+          canDeletePosts
+        />
       </section>
     </main>
   );

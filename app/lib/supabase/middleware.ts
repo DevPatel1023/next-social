@@ -40,7 +40,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/register");
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith("/feed") ||
-    request.nextUrl.pathname.startsWith("/profile");
+    request.nextUrl.pathname.startsWith("/profile") ||
+    request.nextUrl.pathname.startsWith("/post");
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();

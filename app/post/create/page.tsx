@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
-import FeedList from "@/app/components/FeedList";
-import { loadPostsWithComments } from "@/app/lib/social";
+import CreatePostForm from "@/app/components/CreatePostForm";
 
-export default async function FeedPage() {
+export default async function CreatePostPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,14 +22,10 @@ export default async function FeedPage() {
     redirect("/profile/setup");
   }
 
-  const feedItems = await loadPostsWithComments(supabase, {
-    fallbackUsername: appUser.username,
-  });
-
   return (
     <main className="min-h-screen bg-gray-50 py-6">
-      <section className="mx-auto w-full max-w-3xl space-y-5 px-4">
-        <FeedList posts={feedItems} emptyMessage="No posts yet." />
+      <section className="mx-auto w-full max-w-2xl px-4">
+        <CreatePostForm />
       </section>
     </main>
   );

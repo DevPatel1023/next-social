@@ -12,7 +12,8 @@ export type SocialPost = {
   id: string;
   userId: string;
   author: string;
-  caption: string;
+  title: string;
+  body: string;
   images: string[];
   comments: SocialComment[];
 };
@@ -207,7 +208,8 @@ export async function loadPostsWithComments(
         id,
         userId,
         author: usernameById.get(userId) ?? options?.fallbackUsername ?? "user",
-        caption: firstNonEmptyString([post.caption, post.content, post.text, post.body]),
+        title: firstNonEmptyString([post.title, post.name, post.heading]),
+        body: firstNonEmptyString([post.body, post.caption, post.content, post.text]),
         images: await resolvePostImages(supabase, post),
         comments: commentsByPostId.get(id) ?? [],
       };
