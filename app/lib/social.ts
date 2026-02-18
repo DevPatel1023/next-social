@@ -98,7 +98,7 @@ export async function resolveImageSource(
     });
   }
 
-  for (const bucket of ["posts", "post-images", "images", "uploads", "media"]) {
+  for (const bucket of ["post-images", "images"]) {
     attempts.push({ bucket, path: value });
   }
   const envBucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET?.trim();
@@ -146,7 +146,7 @@ export async function loadPostsWithComments(
         .from("comments")
         .select("*")
         .in("post_id", postIds)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: true }) 
     : { data: [] as RawRow[] };
 
   const comments = (rawComments ?? []) as RawRow[];

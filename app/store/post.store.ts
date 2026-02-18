@@ -226,7 +226,7 @@ export const usePostStore = create<PostStore>((set, get) => ({
         return;
       }
 
-      set((state : any) => {
+      set((state) => {
         const next = state.postUIById[postId] ?? defaultPostUI([]);
         return {
           postUIById: {

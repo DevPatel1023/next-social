@@ -24,18 +24,14 @@ async function uploadImage(
     upsert: false,
   });
 
-  if (error) {
-    return { error: error.message, imagePath: "" };
-  }
+  if (error) return { error: error.message, imagePath: "" };
 
   return { error: "", imagePath: `${POST_IMAGES_BUCKET}/${fileName}` };
 }
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -57,7 +53,6 @@ export async function POST(request: Request) {
     if (image.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: "Image is too large (max 10MB)." }, { status: 400 });
     }
-
     const uploaded = await uploadImage(supabase, user.id, image);
     if (uploaded.error) {
       return NextResponse.json({ error: uploaded.error }, { status: 400 });
@@ -67,18 +62,11 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabase
     .from("posts")
-    .insert({
-      user_id: user.id,
-      title,
-      body,
-      images: imagePaths,
-    })
+    .insert({ user_id: user.id, title, body, images: imagePaths })
     .select("id")
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
   return NextResponse.json({ success: true, id: data?.id }, { status: 200 });
 }

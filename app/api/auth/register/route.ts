@@ -1,23 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
-import type { User } from "@supabase/supabase-js";
+import { syncUserToUsersTable } from "@/app/lib/SyncUser";
 
 type RegisterBody = {
   email?: string;
   password?: string;
 };
 
-async function syncUserToUsersTable(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  user: User,
-) {
-  const email = user.email ?? "";
-
-  const { error } = await supabase
-    .from("users")
-    .upsert({ id: user.id, email }, { onConflict: "id" });
-  return error ? error.message : null;
-}
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as RegisterBody;

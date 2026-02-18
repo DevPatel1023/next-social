@@ -60,7 +60,7 @@ export default function FeedList({
           <button
             type="button"
             onClick={() => loadMorePosts(pageKey)}
-            className="rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm"
+            className="rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-blue-500 hover:cursor-pointer shadow-sm"
           >
             Load more posts
           </button>

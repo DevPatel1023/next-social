@@ -131,7 +131,7 @@ export default function Post({
           <button
             type="button"
             onClick={() => loadMoreComments(id)}
-            className="text-xs font-medium text-gray-700 underline underline-offset-2"
+            className="text-xs font-medium text-blue-500 hover:cursor-pointer underline underline-offset-2"
           >
             Load more comments
           </button>
