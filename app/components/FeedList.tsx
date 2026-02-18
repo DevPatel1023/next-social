@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import Post from "@/app/components/Post";
 import type { SocialPost } from "@/app/lib/social";
+import { usePostStore } from "@/app/store/post.store";
 
 type FeedListProps = {
   posts: SocialPost[];
   emptyMessage: string;
   paginated?: boolean;
   canDeletePosts?: boolean;
+  pageKey?: string;
 };
 
 export default function FeedList({
@@ -16,8 +18,18 @@ export default function FeedList({
   emptyMessage,
   paginated = true,
   canDeletePosts = false,
+  pageKey = "feed",
 }: FeedListProps) {
-  const [visiblePosts, setVisiblePosts] = useState(5);
+  const ensureVisiblePosts = usePostStore((state) => state.ensureVisiblePosts);
+  const loadMorePosts = usePostStore((state) => state.loadMorePosts);
+  const visiblePosts = usePostStore((state) => state.visiblePostsByKey[pageKey] ?? 5);
+
+  useEffect(() => {
+    if (paginated) {
+      ensureVisiblePosts(pageKey);
+    }
+  }, [paginated, pageKey, ensureVisiblePosts]);
+
   const renderedPosts = paginated ? posts.slice(0, visiblePosts) : posts;
 
   if (posts.length === 0) {
@@ -47,7 +59,7 @@ export default function FeedList({
         <div className="flex justify-center">
           <button
             type="button"
-            onClick={() => setVisiblePosts((prev) => prev + 5)}
+            onClick={() => loadMorePosts(pageKey)}
             className="rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm"
           >
             Load more posts

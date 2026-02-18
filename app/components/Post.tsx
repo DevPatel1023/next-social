@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { usePostStore } from "@/app/store/post.store";
 
 export type PostComment = {
   id: string;
@@ -34,73 +35,33 @@ export default function Post({
   const router = useRouter();
   const gallery = images && images.length > 0 ? images : image ? [image] : [];
 
-  const [comments, setComments] = useState<PostComment[]>(initialComments);
-  const [commentText, setCommentText] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [visibleComments, setVisibleComments] = useState(3);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const initPostUI = usePostStore((state) => state.initPostUI);
+  const setCommentText = usePostStore((state) => state.setCommentText);
+  const submitComment = usePostStore((state) => state.submitComment);
+  const loadMoreComments = usePostStore((state) => state.loadMoreComments);
+  const deletePost = usePostStore((state) => state.deletePost);
+  const postUI = usePostStore((state) => state.postUIById[id]);
+
+  useEffect(() => {
+    initPostUI(id, initialComments);
+  }, [id, initialComments, initPostUI]);
+
+  const comments = postUI?.comments ?? initialComments;
+  const commentText = postUI?.commentText ?? "";
+  const isSubmitting = postUI?.isSubmittingComment ?? false;
+  const isDeleting = postUI?.isDeletingPost ?? false;
+  const error = postUI?.error ?? null;
+  const visibleComments = postUI?.visibleComments ?? 3;
 
   const handleSubmitComment = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-
-    void (async () => {
-      const trimmed = commentText.trim();
-
-      if (!trimmed || isSubmitting) {
-        return;
-      }
-
-      setIsSubmitting(true);
-
-      try {
-        const response = await fetch("/api/comments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ postId: id, text: trimmed }),
-        });
-
-        const result = (await response.json()) as {
-          error?: string;
-          comment?: PostComment;
-        };
-
-        if (!response.ok || !result.comment) {
-          setError(result.error ?? "Could not post comment");
-          return;
-        }
-
-        setComments((prev) => [...prev, result.comment]);
-        setCommentText("");
-      } catch {
-        setError("Could not post comment");
-      } finally {
-        setIsSubmitting(false);
-      }
-    })();
+    void submitComment(id);
   };
 
   const handleDeletePost = async () => {
-    if (isDeleting) {
-      return;
-    }
-
-    setError(null);
-    setIsDeleting(true);
-
-    try {
-      const response = await fetch(`/api/posts/${id}`, { method: "DELETE" });
-      const result = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        setError(result.error ?? "Could not delete post");
-        return;
-      }
+    const deleted = await deletePost(id);
+    if (deleted) {
       router.refresh();
-    } catch {
-      setError("Could not delete post");
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -141,7 +102,7 @@ export default function Post({
       <form onSubmit={handleSubmitComment} className="flex gap-2 pt-1">
         <input
           value={commentText}
-          onChange={(event) => setCommentText(event.target.value)}
+          onChange={(event) => setCommentText(id, event.target.value)}
           placeholder="Write a comment"
           className="flex-1 rounded-sm border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
         />
@@ -169,7 +130,7 @@ export default function Post({
         {comments.length > visibleComments ? (
           <button
             type="button"
-            onClick={() => setVisibleComments((prev) => prev + 3)}
+            onClick={() => loadMoreComments(id)}
             className="text-xs font-medium text-gray-700 underline underline-offset-2"
           >
             Load more comments

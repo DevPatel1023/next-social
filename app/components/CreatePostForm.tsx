@@ -1,59 +1,27 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePostStore } from "@/app/store/post.store";
 
 export default function CreatePostForm() {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [images, setImages] = useState<File[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const addImages = (files: FileList | null) => {
-    if (!files) return;
-    setImages((prev) => {
-      const existing = new Set(prev.map((f) => f.name + f.size));
-      const incoming = Array.from(files).filter((f) => !existing.has(f.name + f.size));
-      return [...prev, ...incoming];
-    });
-  };
-
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  };
+  const title = usePostStore((state) => state.createTitle);
+  const body = usePostStore((state) => state.createBody);
+  const images = usePostStore((state) => state.createImages);
+  const loading = usePostStore((state) => state.createLoading);
+  const error = usePostStore((state) => state.createError);
+  const setTitle = usePostStore((state) => state.setCreateTitle);
+  const setBody = usePostStore((state) => state.setCreateBody);
+  const addImages = usePostStore((state) => state.addCreateImages);
+  const removeImage = usePostStore((state) => state.removeCreateImage);
+  const submitCreatePost = usePostStore((state) => state.submitCreatePost);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("body", body);
-      for (const image of images) {
-        formData.append("images", image);
-      }
-
-      const response = await fetch("/api/posts", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        setError(result.error ?? "Could not create post");
-        return;
-      }
-
+    const result = await submitCreatePost();
+    if (!result.error) {
       router.push("/feed");
       router.refresh();
-    } catch {
-      setError("Could not create post");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -89,7 +57,7 @@ export default function CreatePostForm() {
         {images.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {images.map((image, index) => (
-              <div key={index} className="group relative h-24 w-24">
+              <div key={`${image.name}-${index}`} className="group relative h-24 w-24">
                 <img
                   src={URL.createObjectURL(image)}
                   alt={image.name}
@@ -100,7 +68,7 @@ export default function CreatePostForm() {
                   onClick={() => removeImage(index)}
                   className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100"
                 >
-                  ✕
+                  x
                 </button>
                 <p className="mt-0.5 w-24 truncate text-xs text-gray-500">{image.name}</p>
               </div>
