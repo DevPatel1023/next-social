@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
+import Post from "@/app/components/Post";
+import { loadPostsWithComments } from "@/app/lib/social";
 
 export default async function FeedPage() {
   const supabase = await createClient();
@@ -22,23 +23,29 @@ export default async function FeedPage() {
     redirect("/profile/setup");
   }
 
-  return (
-    <main className="mx-auto min-h-screen max-w-3xl p-6">
-      <header className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Feed</h1>
-        <div className="flex items-center gap-4">
-          <Link className="underline" href="/profile/setup">
-            @{appUser.username}
-          </Link>
-          <Link className="underline" href="/auth/logout">
-            Logout
-          </Link>
-        </div>
-      </header>
+  const feedItems = await loadPostsWithComments(supabase, {
+    fallbackUsername: appUser.username,
+  });
 
-      <section className="rounded-lg border bg-white p-4">
-        <p className="text-sm text-gray-600">Signed in as</p>
-        <p className="font-medium">{user.email}</p>
+  return (
+    <main className="min-h-screen bg-gray-50 py-6">
+      <section className="mx-auto w-full max-w-3xl space-y-5 px-4">
+        {feedItems.map((post) => (
+          <Post
+            key={post.id}
+            id={post.id}
+            author={post.author}
+            caption={post.caption}
+            images={post.images}
+            initialComments={post.comments}
+          />
+        ))}
+
+        {feedItems.length === 0 ? (
+          <div className="rounded-sm border border-gray-200 bg-white p-6 text-center text-sm text-gray-500 shadow-sm">
+            No posts yet.
+          </div>
+        ) : null}
       </section>
     </main>
   );
