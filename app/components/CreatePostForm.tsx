@@ -3,72 +3,109 @@
 import { useRouter } from "next/navigation";
 import { usePostStore } from "@/app/store/post.store";
 import { toast } from "react-toastify";
+import { useForm } from "react-hook-form";
+
+type FormValues = {
+  title: string;
+  body: string;
+};
 
 export default function CreatePostForm() {
   const router = useRouter();
-  const title = usePostStore((state) => state.createTitle);
-  const body = usePostStore((state) => state.createBody);
-  const images = usePostStore((state) => state.createImages);
-  const loading = usePostStore((state) => state.createLoading);
-  const setTitle = usePostStore((state) => state.setCreateTitle);
-  const setBody = usePostStore((state) => state.setCreateBody);
-  const addImages = usePostStore((state) => state.addCreateImages);
-  const removeImage = usePostStore((state) => state.removeCreateImage);
-  const submitCreatePost = usePostStore((state) => state.submitCreatePost);
 
-  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const {
+    createImages: images,
+    createLoading: loading,
+    addCreateImages: addImages,
+    removeCreateImage: removeImage,
+    submitCreatePost,
+    setCreateTitle: setTitle,
+    setCreateBody: setBody,
+  } = usePostStore();
 
-    // post cannot be empty if it has no title, body, or images
-    if(!title.trim() && !body.trim() && images.length === 0) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: {
+      title: "",
+      body: "",
+    },
+  });
+
+  const onSubmit = async (data: FormValues) => {
+    // sync RHF data to Zustand
+    setTitle(data.title);
+    setBody(data.body);
+
+    // empty post validation
+    if (!data.title.trim() && !data.body.trim() && images.length === 0) {
       toast.error("Post cannot be empty");
       return;
     }
 
     const result = await submitCreatePost();
 
-    if (result.error) {
-      // error toast
+    if (result?.error) {
       toast.error("Failed to create post: " + result.error);
       return;
     }
 
-    // if successful, show success toast and redirect to feed
     toast.success("Post created successfully!");
-    // navigate to feed and refresh to show the new post
     router.push("/feed");
     router.refresh();
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 rounded-sm border border-gray-200 bg-white p-5 shadow-sm">
+    <form
+    noValidate
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-4 rounded-sm border border-gray-200 bg-white p-5 shadow-sm"
+    >
       <h1 className="text-xl font-semibold text-gray-900">Create post</h1>
 
-
+      {/* Title */}
       <div className="space-y-1">
         <label className="text-sm text-gray-700">Title</label>
         <input
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          {...register("title", {
+            maxLength: {
+              value: 100,
+              message: "Title cannot exceed 100 characters",
+            },
+          })}
           placeholder="Post title"
           className="w-full rounded-sm border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
         />
+        {errors.title && (
+          <p className="text-xs text-red-500">{errors.title.message}</p>
+        )}
       </div>
 
+      {/* Body */}
       <div className="space-y-1">
         <label className="text-sm text-gray-700">Body</label>
         <textarea
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
+          {...register("body", {
+            maxLength: {
+              value: 250,
+              message: "Body cannot exceed 250 characters",
+            },
+          })}
           placeholder="Write something..."
           className="min-h-28 w-full rounded-sm border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
         />
+        {errors.body && (
+          <p className="text-xs text-red-500">{errors.body.message}</p>
+        )}
       </div>
 
+      {/* Images */}
       <div className="space-y-2">
         <label className="text-sm text-gray-700">Images</label>
 
-        {images.length > 0 ? (
+        {images.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {images.map((image, index) => (
               <div key={`${image.name}-${index}`} className="group relative h-24 w-24">
@@ -84,11 +121,13 @@ export default function CreatePostForm() {
                 >
                   x
                 </button>
-                <p className="mt-0.5 w-24 truncate text-xs text-gray-500">{image.name}</p>
+                <p className="mt-0.5 w-24 truncate text-xs text-gray-500">
+                  {image.name}
+                </p>
               </div>
             ))}
           </div>
-        ) : null}
+        )}
 
         <label className="flex cursor-pointer items-center gap-2 self-start rounded-sm border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
           + Add images
@@ -97,11 +136,12 @@ export default function CreatePostForm() {
             accept="image/*"
             multiple
             className="hidden"
-            onChange={(event) => addImages(event.target.files)}
+            onChange={(e) => addImages(e.target.files)}
           />
         </label>
       </div>
 
+      {/* Submit */}
       <button
         type="submit"
         disabled={loading}

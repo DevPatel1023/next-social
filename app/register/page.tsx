@@ -1,44 +1,53 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
 import { useAuthStore } from "@/app/store/auth.store";
 import { toast } from "react-toastify";
 
+type RegisterForm = {
+  email: string;
+  password: string;
+};
+
 export default function RegisterPage() {
-  const { register, loading } = useAuthStore();
   const router = useRouter();
+  const { register: registerUser } = useAuthStore();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterForm>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage(null);
+  const onSubmit = async (data: RegisterForm) => {
+    const result = await registerUser(data.email, data.password);
 
-    const result = await register(email, password);
     if (result.error) {
       toast.error("Registration failed: " + result.error);
       return;
     }
 
     if (result.requiresEmailConfirmation) {
-      setMessage("Check your email to confirm your account, then log in.");
+      toast.info("Check your email to confirm your account.");
       return;
     }
 
-    // add toast for successful registration
     toast.success("Registration successful!");
-
     router.push("/feed");
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 px-4 space-y-3">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 px-4">
       <form
-        onSubmit={handleSubmit}
+        noValidate
+        onSubmit={handleSubmit(onSubmit)}
         className="w-full max-w-sm space-y-5 rounded-2xl bg-white p-8 shadow-xl"
       >
         <div className="space-y-1 text-center">
@@ -50,55 +59,64 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {message && (
-          <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-            {message}
+        <div className="space-y-4">
+          {/* Email */}
+          <div className="space-y-1">
+            <span className="text-black font-medium">Email</span>
+            <input
+              type="email"
+              placeholder="Email address"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^\S+@\S+$/i,
+                  message: "Enter a valid email",
+                },
+              })}
+            />
+            {errors.email && (
+              <p className="text-xs text-red-500">
+                {errors.email.message}
+              </p>
+            )}
           </div>
-        )}
 
-        <div className="space-y-3">
-          <div className="space-y-3">
-            <span className="text-black font-medium">
-            Email
-          </span>
-          <input
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
-            placeholder="Email address"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          </div>
-
-          <div className="space-y-3">
-            <span className="text-black font-medium">
-            Password
-          </span>
-          <input
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
-            placeholder="Password (min 8 characters)"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-          />
+          {/* Password */}
+          <div className="space-y-1">
+            <span className="text-black font-medium">Password</span>
+            <input
+              type="password"
+              placeholder="Password (min 8 characters)"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+              {...register("password", {
+                required: "Password is required",
+                minLength: {
+                  value: 8,
+                  message: "Password must be at least 8 characters",
+                },
+              })}
+            />
+            {errors.password && (
+              <p className="text-xs text-red-500">
+                {errors.password.message}
+              </p>
+            )}
           </div>
         </div>
 
         <button
-          disabled={loading}
+          disabled={isSubmitting}
           className="w-full rounded-lg bg-black py-2.5 text-sm font-medium text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Creating account..." : "Register"}
+          {isSubmitting ? "Creating account..." : "Register"}
         </button>
 
         <p className="text-center text-sm text-gray-600">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-medium text-black underline-offset-4 hover:underline hover:cursor-pointer"
+            className="font-medium text-black underline-offset-4 hover:underline"
           >
             Login
           </Link>
