@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/store/auth.store";
+import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const { login, loading } = useAuthStore();
@@ -11,17 +12,19 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     const result = await login(email, password);
     if (result.error) {
-      setError(result.error);
+      toast.error("Login failed: " + result.error);
       return;
     }
+
+    toast.success("Login successful!");
+    // navigate to feed and refresh to show the logged in state
     router.push("/feed");
+    router.refresh();
   };
 
   return (
@@ -36,12 +39,6 @@ export default function LoginPage() {
             Sign in to continue
           </p>
         </div>
-
-        {error && (
-          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-            {error}
-          </div>
-        )}
 
         <div className="space-y-3">
           <div className="space-y-3">

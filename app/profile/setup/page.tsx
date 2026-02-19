@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 type ProfileResponse = {
   profile?: {
@@ -15,7 +16,6 @@ export default function ProfileSetupPage() {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [hydrating, setHydrating] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -38,8 +38,8 @@ export default function ProfileSetupPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+
     try {
       const response = await fetch("/api/profile", {
         method: "PUT",
@@ -48,13 +48,17 @@ export default function ProfileSetupPage() {
       });
 
       const result = (await response.json()) as ProfileResponse;
+
       if (!response.ok) {
-        setError(result.error ?? "Could not update profile");
-        return;
+        toast.error(result.error ?? "Could not update profile");
+        return; 
       }
 
+      toast.success("Username saved successfully!");
       router.push("/feed");
       router.refresh();
+    } catch {
+      toast.error("Something went wrong. Try again.");
     } finally {
       setLoading(false);
     }
@@ -78,8 +82,6 @@ export default function ProfileSetupPage() {
         <p className="text-sm text-gray-600">
           This username will identify you in the app.
         </p>
-
-        {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
         <input
           className="w-full rounded border p-2"
