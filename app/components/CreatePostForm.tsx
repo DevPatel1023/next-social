@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { usePostStore } from "@/app/store/post.store";
 import { toast } from "react-toastify";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
-type FormValues = {
-  title: string;
-  body: string;
-};
+import {
+  createPostClientSchema,
+  type CreatePostClientInput,
+} from "@/app/lib/validation";
 
 export default function CreatePostForm() {
   const router = useRouter();
@@ -27,14 +27,15 @@ export default function CreatePostForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormValues>({
+  } = useForm<CreatePostClientInput>({
+    resolver: zodResolver(createPostClientSchema),
     defaultValues: {
       title: "",
       body: "",
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: CreatePostClientInput) => {
     // sync RHF data to Zustand
     setTitle(data.title);
     setBody(data.body);
@@ -69,12 +70,7 @@ export default function CreatePostForm() {
       <div className="space-y-1">
         <label className="text-sm text-gray-700">Title</label>
         <input
-          {...register("title", {
-            maxLength: {
-              value: 100,
-              message: "Title cannot exceed 100 characters",
-            },
-          })}
+          {...register("title")}
           placeholder="Post title"
           className="w-full rounded-sm border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
         />
@@ -87,12 +83,7 @@ export default function CreatePostForm() {
       <div className="space-y-1">
         <label className="text-sm text-gray-700">Body</label>
         <textarea
-          {...register("body", {
-            maxLength: {
-              value: 250,
-              message: "Body cannot exceed 250 characters",
-            },
-          })}
+          {...register("body")}
           placeholder="Write something..."
           className="min-h-28 w-full rounded-sm border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900"
         />

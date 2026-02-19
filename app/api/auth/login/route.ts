@@ -1,23 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { syncUserToUsersTable } from "@/app/lib/SyncUser";
-
-type LoginBody = {
-  email?: string;
-  password?: string;
-};
+import { authSchema } from "@/app/lib/validation";
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as LoginBody;
-  const email = body.email?.trim();
-  const password = body.password;
+  const body = await request.json().catch(() => ({}));
+  const parsed = authSchema.safeParse(body);
 
-  if (!email || !password) {
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Email and password are required." },
+      { error: parsed.error.issues[0]?.message ?? "Invalid request body." },
       { status: 400 },
     );
   }
+  const { email, password } = parsed.data;
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword({

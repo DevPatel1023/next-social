@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { usernameSchema } from "@/app/lib/validation";
 
 type ProfileResponse = {
   profile?: {
@@ -38,13 +39,20 @@ export default function ProfileSetupPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const usernameResult = usernameSchema.safeParse(username);
+    if (!usernameResult.success) {
+      toast.error(usernameResult.error.issues[0]?.message ?? "Invalid username");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const response = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username: usernameResult.data }),
       });
 
       const result = (await response.json()) as ProfileResponse;

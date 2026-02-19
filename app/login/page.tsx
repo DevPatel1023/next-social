@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useAuthStore } from "@/app/store/auth.store";
 import { toast } from "react-toastify";
-
-type LoginForm = {
-  email: string;
-  password: string;
-};
+import { authSchema, type AuthInput } from "@/app/lib/validation";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,14 +16,15 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({
+  } = useForm<AuthInput>({
+    resolver: zodResolver(authSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (data: AuthInput) => {
     const result = await login(data.email, data.password);
 
     if (result.error) {
@@ -61,13 +59,7 @@ export default function LoginPage() {
               type="email"
               placeholder="Email address"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^\S+@\S+$/i,
-                  message: "Enter a valid email",
-                },
-              })}
+              {...register("email")}
             />
             {errors.email && (
               <p className="text-xs text-red-500">{errors.email.message}</p>
@@ -81,13 +73,7 @@ export default function LoginPage() {
               type="password"
               placeholder="Password"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 8,
-                  message: "Password must be at least 8 characters",
-                }
-              })}
+              {...register("password")}
             />
             {errors.password && (
               <p className="text-xs text-red-500">

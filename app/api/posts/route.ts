@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
+import { createPostServerSchema } from "@/app/lib/validation";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const POST_IMAGES_BUCKET = "post-images";
@@ -44,9 +45,14 @@ export async function POST(request: Request) {
     .getAll("images")
     .filter((item): item is File => item instanceof File && item.size > 0);
 
-  if (!title || !body) {
-    return NextResponse.json({ error: "title and body are required." }, { status: 400 });
+  const parsed = createPostServerSchema.safeParse({ title, body });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid request body." },
+      { status: 400 },
+    );
   }
+  const postData = parsed.data;
 
   const imagePaths: string[] = [];
   for (const image of images) {
@@ -62,7 +68,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabase
     .from("posts")
-    .insert({ user_id: user.id, title, body, images: imagePaths })
+    .insert({ user_id: user.id, title: postData.title, body: postData.body, images: imagePaths })
     .select("id")
     .single();
 

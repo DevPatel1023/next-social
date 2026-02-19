@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import type { CreateCommentInput } from "@/app/lib/validation";
 
 type PostComment = {
   id: string;
@@ -202,17 +203,19 @@ export const usePostStore = create<PostStore>((set, get) => ({
     }));
 
     try {
+      const payload: CreateCommentInput = { postId, text: trimmed };
       const response = await fetch("/api/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, text: trimmed }),
+        body: JSON.stringify(payload),
       });
       const result = (await response.json()) as {
         error?: string;
         comment?: PostComment;
       };
+      const createdComment = result.comment;
 
-      if (!response.ok || !result.comment) {
+      if (!response.ok || !createdComment) {
         set((state) => ({
           postUIById: {
             ...state.postUIById,
@@ -232,8 +235,8 @@ export const usePostStore = create<PostStore>((set, get) => ({
           postUIById: {
             ...state.postUIById,
             [postId]: {
-              ...next,
-              comments: [...next.comments, result.comment],
+            ...next,
+              comments: [...next.comments, createdComment],
               commentText: "",
               isSubmittingComment: false,
               error: null,

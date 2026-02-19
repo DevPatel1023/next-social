@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/app/lib/supabase/client";
+import type { AuthInput } from "@/app/lib/validation";
 
 type AuthResult = {
   error: string | null;
@@ -12,8 +13,8 @@ type AuthResult = {
 type AuthState = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<AuthResult>;
-  register: (email: string, password: string) => Promise<AuthResult>;
+  login: (email: AuthInput["email"], password: AuthInput["password"]) => Promise<AuthResult>;
+  register: (email: AuthInput["email"], password: AuthInput["password"]) => Promise<AuthResult>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
 };

@@ -1,17 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
-
-type ProfileBody = {
-  username?: string;
-};
-
-function normalizeUsername(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function isValidUsername(value: string) {
-  return /^[a-z0-9_]{3,30}$/.test(value);
-}
+import { profileSchema } from "@/app/lib/validation";
 
 export async function GET() {
   const supabase = await createClient();
@@ -46,18 +35,15 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as ProfileBody;
-  const username = normalizeUsername(body.username ?? "");
-
-  if (!isValidUsername(username)) {
+  const body = await request.json().catch(() => ({}));
+  const parsed = profileSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      {
-        error:
-          "Username must be 3-30 chars and contain only lowercase letters, numbers, or underscores.",
-      },
+      { error: parsed.error.issues[0]?.message ?? "Invalid request body." },
       { status: 400 },
     );
   }
+  const { username } = parsed.data;
 
   const { error } = await supabase
     .from("users")

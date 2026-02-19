@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
-
-type CommentBody = {
-  postId?: string;
-  text?: string;
-};
+import { createCommentSchema } from "@/app/lib/validation";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -19,16 +15,15 @@ export async function POST(request: Request) {
   }
 
   // 2. Parse body
-  const body = (await request.json().catch(() => ({}))) as CommentBody;
-  const postId = body.postId?.trim();
-  const text = body.text?.trim();
-
-  if (!postId || !text) {
+  const body = await request.json().catch(() => ({}));
+  const parsed = createCommentSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "postId and text are required." },
+      { error: parsed.error.issues[0]?.message ?? "Invalid request body." },
       { status: 400 },
     );
   }
+  const { postId, text } = parsed.data;
 
   // 3. Insert comment
   const { data, error } = await supabase
